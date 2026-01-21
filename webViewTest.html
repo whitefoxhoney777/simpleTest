@@ -46,50 +46,49 @@
 
         // 뷰포트 높이 변화 감지 (모든 플랫폼에서 동작)
         const onResize = () => {
-          const onResize = () => {
-            const curHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-            const diff = baseHeight - curHeight; // 양수면 키보드가 올라온 경우
+          const curHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+          const diff = baseHeight - curHeight; // 양수면 키보드가 올라온 경우
 
-            // 차이가 100px 이상이면 "키보드가 열렸다"라고 판단 (임계값은 상황에 맞게 조정)
-            if(diff > 100) {
-              // 키보드 열림
-              if (!keyboardOpen) {
-                keyboardOpen = true;
-                bottomSheet.style.bottom = diff + 'px'; // 바텀시트를 키보드 위에 배치
-              }
-            } else {
-              // 키보드 닫힘
-              if(keyboardOpen) {
-                keyboardOpen = false;
-                bottomSheet.style.bottom = '0px';
+          // 차이가 100px 이상이면 "키보드가 열렸다"라고 판단 (임계값은 상황에 맞게 조정)
+          if(diff > 100) {
+            // 키보드 열림
+            if (!keyboardOpen) {
+              keyboardOpen = true;
+              bottomSheet.style.bottom = diff + 'px'; // 바텀시트를 키보드 위에 배치
+            }
+          } else {
+            // 키보드 닫힘
+            if(keyboardOpen) {
+              keyboardOpen = false;
+              bottomSheet.style.bottom = '0px';
             }
           }
-        };
+      };
 
-        // 1. resize 이벤트 (Android Chrome, iOS Chrome 등)
-        window.addEventListener('resize', onResize);
-          
-        // 2. visualViewport 이벤트 (iOS Safari, 최신 Chrome 등)
-        if(window.visualViewport) {
-          window.visualViewport.addEventListener('resize', onResize);
-          window.visualViewport.addEventListener('scroll', onResize); // 스크롤 시에도 재계산
+      // 1. resize 이벤트 (Android Chrome, iOS Chrome 등)
+      window.addEventListener('resize', onResize);
+        
+      // 2. visualViewport 이벤트 (iOS Safari, 최신 Chrome 등)
+      if(window.visualViewport) {
+        window.visualViewport.addEventListener('resize', onResize);
+        window.visualViewport.addEventListener('scroll', onResize); // 스크롤 시에도 재계산
+      }
+
+      // 페이지 로드 직후 한 번 호출해 초기값을 확정
+      onResize();
+
+      // --- 선택 사항: 입력창 포커스 시 자동 스크롤 => 입력창이 바텀시트 위에 가려지지 않도록 스크롤 보정
+      document.addEventListener('focusin', (e) => {
+        if(e.target.tagName = 'INPUT' || e.target.tagName = 'TEXTAREA') {
+          // 현재 스크롤 위치 + 입력창 위치를 고려해 부드럽게 스크롤
+          const rect = e.target.getBoundingClientRect();
+          const offset = rect.bottom - (window.innerHeight - (keyboardOpen ? diff : 0));
+          if(offset > 0) {
+            window.scrollBy{top:offset + 20, behavior: 'smooth'});
+          }
         }
-
-        // 페이지 로드 직후 한 번 호출해 초기값을 확정
-        onResize();
-
-        // --- 선택 사항: 입력창 포커스 시 자동 스크롤 => 입력창이 바텀시트 위에 가려지지 않도록 스크롤 보정
-        document.addEventListener('focusin', (e) => {
-          if(e.target.tagName = 'INPUT' || e.target.tagName = 'TEXTAREA') {
-            // 현재 스크롤 위치 + 입력창 위치를 고려해 부드럽게 스크롤
-            const rect = e.target.getBoundingClentRect();
-            const offset = rect.bottom - (window.innerHeight - (keyboardOpen ? diff : 0));
-            if(offset > 0) {
-              window.scrollBy{top:offset + 20, behavior: 'smooth'});
-            }
-          }
-        });
-      })();
+      });
+    })();
     </script>
   </body>
 </html>
