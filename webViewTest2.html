@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <title>WebView Keyboard & BottomSheet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <style>
+      html, body {
+        margin:0; padding:0; height:100%; font-family:Arial, Helvetica, sans-serif; overflow:hidden; /* 스크롤은 WebView 내부가 담당 */
+      }
+      .content {height:100%; overflow-y:auto; /* 내용 길면 스크롤 발생 */padding:16px; box-sizing:border-box;}
+      .bottom-sheet {position:fixed; left:0; right:0; bottom:0; box-sizing:border-box; 
+                     height:200px; /* 원하는 높이 기입: 키보드가 없을 때는 기능 */ 
+                     background:#fff; border-top:1px solid #ddd; box-shadow:0 -2px 8px rgba(0,0,0,.1);
+                     transition:bottom .2s ease-out; padding:12px;}
+      .bottom-sheet h3 {margin:0 0 8px;}
+      .bottom-sheet button {padding:8px 12px; font-size:14px;}
+    </style>
+  </head>
+  <body>
+    <div class="content">
+      <h2>키보드 감지 테스트</h2>
+      <p>아래 입력창을 탭하면 키보드가 뜨고, 바텀시트가 위로 이동합니다.</p>
+      <textarea rows="4" style="width:100%;font-size:16px;" placeholder="여기에 입력해 보세요..."></textarea>
+      <p>스크롤 필요시 내용을 늘려주세요.</p>
+      <div style="height:800px"></div>
+    </div>
+<div class="bottom-sheet">
+  <h3>바텀시트</h3>
+  <button type="button" onclick="alert('버튼 클릭')">버튼</button>
+</div>
+
+<script>
+  (() => {
+    const bottomSheet = document.querySelector('.bottom-sheet');
+
+    // 최초 로드 시의 뷰포트 높이 저장: 키보드가 없는 상태
+    let baseHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    let keyboardOpen = false;
+    let currentKeyboardHeight = 0;
+    const KEYBOARD_THRESHOLD = 100; // px: 임계값(필요시 조절)
+
+    const onResize = () => {
+      const curHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      const diff = baseHeight - curHeight; // 양수면 키보드가 올라온 경우
+      const keyboardHeight = diff > 0 ? diff : 0;
+
+      if (keyboardHeight > KEYBOARD_THRESHOLD) {
+        // 키보드 열림
+        if (!keyboardOpen || currentKeyboardHeight !== keyboardHeight) {
+          keyboardOpen = true;
+          currentKeyboardHeight = keyboardHeight;
+          bottomSheet.style.bottom = keyboardHeight + 'px'; // 바텀시트를 키보드 위에 배치
+        }
+      } else {
+        // 키보드 닫힘
+        if (keyboardOpen) {
+          keyboardOpen = false;
+          currentKeyboardHeight = 0;
+          bottomSheet.style.bottom = '0px';
+          // 키보드가 닫힌 시점의 높이를 새로운 기준으로 삼음 (예: 회전 등)
+          baseHeight = curHeight;
+        } else {
+          // 키보드가 애초에 닫혀있던 상태라면 기준을 보정 (예: 화면 크기 변경)
+          baseHeight = curHeight;
+        }
+      }
+    };
+
+    // 이벤트 등록
+    window.addEventListener('resize', onResize);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', onResize);
+      window.visualViewport.addEventListener('scroll', onResize);
+    }
+
+    // 초기 호출
+    onResize();
+
+    // 입력창 포커스 시 자동 스크롤 -> 입력창이 바텀시트/키보드에 가려지지 않도록 보정
+    document.addEventListener('focusin', (e) => {
+      const target = e.target;
+      if (!target) return;
+      const tag = target.tagName ? target.tagName.toUpperCase() : '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA') {
+        // 현재 키보드 높이(있다면)를 사용
+        const kbHeight = currentKeyboardHeight;
+        const rect = target.getBoundingClientRect();
+        // 입력창의 하단이 보이는 영역(윈도우 높이 - 키보드 높이)보다 아래에 있으면 스크롤
+        const visibleBottom = window.innerHeight - kbHeight;
+        const offset = rect.bottom - visibleBottom;
+        if (offset > 0) {
+          // 부드럽게 스크롤 (올바른 문법)
+          window.scrollBy({ top: offset + 20, behavior: 'smooth' });
+        }
+      }
+    });
+  })();
+</script>
+  </body>
+</html>
